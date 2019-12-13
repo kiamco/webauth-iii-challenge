@@ -1,5 +1,7 @@
 const Router = require('express').Router();
 const bycrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const secrets = require('../config/secret.js');
 
 // import data model fo users table
 const db = require('../users/userModel');
@@ -24,11 +26,26 @@ Router.post('/login', (req, res) => {
 
     db.findBy(username)
         .then(item => {
-            console.log(item)
             if (item && bycrypt.compareSync(password, item[0].password)) {
-                res.status(200).json({ username: item[0].username });
+                const token = genToken(item)
+                res.status(200).json({ username: item[0].username, token: token });
             }
         })
 })
 
+
+function genToken(user) {
+
+    // create the payload...
+    const payload = {
+            userid: user.id,
+            username: user.username,
+    }
+      const options = {
+          expiresIn: '1h'
+      };
+      const token = jwt.sign(payload, secrets.jwtSecret, options);
+
+      return token;
+}
 module.exports = Router;
